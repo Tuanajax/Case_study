@@ -1,21 +1,11 @@
-from cgitb import text
 from datetime import datetime
-from operator import index
-
 from tkinter import ttk
-from cProfile import label
-from distutils.cmd import Command
-from doctest import master
 import sqlite3
 from tkinter import *
 from random import randint, random
 import re
 from tkinter import messagebox
 from tkinter import ttk
-from tkinter.tix import Tree
-from turtle import clear, width
-from typing_extensions import Self
-from webbrowser import get
 from Database_class import*
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg, 
@@ -155,7 +145,7 @@ class DB:
         rows = self.cur.fetchall()
         return rows
 
-    def Max_(self):
+    def Top3_Author(self):
         self.cur.execute(f'SELECT author, COUNT(ID) column FROM {self.data} GROUP BY author order by column DESC limit 3') 
         rows = self.cur.fetchall()
         return rows
@@ -203,7 +193,7 @@ def view():
     for row in Table_.view():   
         tree.insert('',END,values = row)
     for i in range(3):
-        print(f'Author {Table_.Max_()[i][0]}: {Table_.Max_()[i][1]}')
+        (f'Author {Table_.Top3_Author()[i][0]}: {Table_.Top3_Author()[i][1]}')
 
 def search():     
     clear_treev()
