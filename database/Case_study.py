@@ -1,7 +1,7 @@
 from cgitb import text
 from datetime import datetime
 from operator import index
-
+import matplotlib.pyplot as plt
 from tkinter import ttk
 from cProfile import label
 from distutils.cmd import Command
@@ -21,7 +21,7 @@ from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg, 
 NavigationToolbar2Tk)
 
-Data_={"A1":('Vu Anh Tuan','1'),"A2":("Do van hung","2")}
+Data_={"Report":(1,1),"A1":('Vu Anh Tuan','1'),"A2":("Do van hung","2")}
 
 class Sign_Up(Toplevel):
     
@@ -159,6 +159,20 @@ class DB:
         self.cur.execute(f'SELECT author, COUNT(ID) column FROM {self.data} GROUP BY author order by column DESC limit 3') 
         rows = self.cur.fetchall()
         return rows
+    
+    def genre_(self):
+        self.cur.execute(f'SELECT genre, COUNT(ID) column FROM {self.data} GROUP BY genre')
+        rows =self.cur.fetchall()
+        return rows
+def comprision(self):
+    conn = sqlite3.connect("mybooks.db") 
+    cur = conn.cursor()
+    t =  cur.execute(f'SELECT * FROM  colum {Report}') 
+    for i in Data_.keys():
+        self.cur.execute(f'SELECT GERNE, COUNT(ID) Column FROM {i} GROUP BY GENRE')
+        rows =self.cur.fetchall()
+    return rows
+            
 window = Tk()
 window.title("My Books!!!!")
 
@@ -202,9 +216,6 @@ def view():
     clear_treev()
     for row in Table_.view():   
         tree.insert('',END,values = row)
-    for i in range(3):
-        (f'Author {Table_.Top3_Author()[i][0]}: {Table_.Top3_Author()[i][1]}')
-
 def search():     
     clear_treev()
     for row in Table_.search(title_text.get(), genre_text.get(), author_text.get()): 
@@ -279,6 +290,37 @@ author_text = StringVar()
 ent_author = Entry(window, textvariable=author_text,width=20)
 ent_author.grid(row=2, column=2,sticky='nsew')
 
+lst_Top = Listbox(window)
+lst_Top.grid(rowspan=6,column=4,columnspan=2)
+def Top_List():
+    lst_Top.delete(0,END)
+    for row in Table_.Top3_Author():
+        lst_Top.insert(END,row)
+
+def pie_chart():
+    lst_y =[]
+    lst_label =[]
+    for row in Table_.genre_():
+        lst_label.append(row[0])
+        lst_y.append(row[1])
+    print(lst_label)
+    print(lst_y)
+    plt.pie(lst_y,labels = lst_label)
+    plt.legend()
+    plt.show()
+
+def pie_chart_sum():
+    lst_y =[]
+    lst_label =[]
+    for row in Table_.comprision:
+        lst_label.append(row[0])
+        lst_y.append(row[1])
+    print(lst_label)
+    print(lst_y)
+    plt.pie(lst_y,labels = lst_label)
+    plt.legend()
+    plt.show()
+
 #  Tree 
 columns = ('1', '2', '3','4')
 tree = ttk.Treeview(columns=columns, show='headings')
@@ -306,7 +348,9 @@ butt_Update = Button(window, text="Update selected", width=12, command=update).g
 
 butt_Delete = Button(window, text="Delete selected", width=12, command=delete).grid(row=7, column=0)
 
-button_Histogram = Button(window, text = 'Histogram',command=Histogram, width=12).grid(row=8,column=0)
+button_top = Button(window, text = 'Top list',command=Top_List, width=12).grid(row=8,column=0)
+
+button_Histogram = Button(window, text = 'Histogram',command=pie_chart, width=12).grid(row=9,column=0)
 
 # Menu bar placed on the left-side of the window, which consists: login; sign-up;
 menubar =Menu(window)
@@ -316,6 +360,10 @@ acount.add_command(label = 'login/switch', comman = lambda:Login(master))
 acount.add_command(label = 'Sign-up', comman = lambda:Sign_Up(master))
 acount.add_separator()
 acount.add_command(label = 'Exit', comman = ask_closing)
+
+
+
+plt.show()
 
 window.config(menu=menubar)
 
