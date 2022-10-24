@@ -13,15 +13,14 @@ import re
 from tkinter import messagebox
 from tkinter import ttk
 from tkinter.tix import Tree
-from turtle import clear, width
+from turtle import clear, left, right, width
 from typing_extensions import Self
 from webbrowser import get
 from Database_class import*
 from matplotlib.figure import Figure
-from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg, 
-NavigationToolbar2Tk)
+from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg)
 
-Data_={"Report":(1,1),"A1":('Vu Anh Tuan','1'),"A2":("Do van hung","2")}
+Data_={"A1":('Vu Anh Tuan','1'),"A2":("Do van hung","2")}
 
 class Sign_Up(Toplevel):
     
@@ -155,8 +154,8 @@ class DB:
         rows = self.cur.fetchall()
         return rows
 
-    def Top3_Author(self):
-        self.cur.execute(f'SELECT author, COUNT(ID) column FROM {self.data} GROUP BY author order by column DESC limit 3') 
+    def Top_Author(self):
+        self.cur.execute(f'SELECT author, COUNT(ID) column FROM {self.data} GROUP BY author order by column DESC limit 1') 
         rows = self.cur.fetchall()
         return rows
     
@@ -164,14 +163,26 @@ class DB:
         self.cur.execute(f'SELECT genre, COUNT(ID) column FROM {self.data} GROUP BY genre')
         rows =self.cur.fetchall()
         return rows
-def comprision(self):
-    conn = sqlite3.connect("mybooks.db") 
-    cur = conn.cursor()
-    t =  cur.execute(f'SELECT * FROM  colum {Report}') 
-    for i in Data_.keys():
-        self.cur.execute(f'SELECT GERNE, COUNT(ID) Column FROM {i} GROUP BY GENRE')
-        rows =self.cur.fetchall()
-    return rows
+    
+    def report(self):
+        report_label =[]
+        report_list=[]
+        for i in Data_.keys():
+            self.cur.execute(f'SELECT genre, COUNT(ID) Column FROM {i} GROUP BY genre')
+            rows =self.cur.fetchall()
+            for j in range(len(rows)):
+                report_list.append(rows[j])
+        for i in report_list:
+            report_label.append(i[0])
+        report_label=list(dict.fromkeys(report_label))
+        Dict = {}
+        for i in report_label:
+            count = 0
+            for j in report_list:
+                if i == j[0]: count+=j[1]
+            Dict[i]=count
+        return Dict
+        
             
 window = Tk()
 window.title("My Books!!!!")
@@ -193,16 +204,16 @@ def item_selected(event):
     ent_genre.insert(END,selected_item[2])
     ent_author.insert(END,selected_item[3])
 
-# def check_data_exist():
-#     count_=0
-#     for row in Table_.view():
-#         if row[1]==title_text.get(): 
-#             count_+=1
-#     if count_>=1 or not title_text.get():
-#         return True
-#     else:
-        # return messagebox.askokcancel("Quit", "The title  not already exists!")    
-        
+def check_data_exist():
+    count_=0
+    for row in Table_.view():
+        if row[1]==title_text.get(): 
+            count_+=1
+            # print(row[1])
+    if count_>=1 :
+        return messagebox.askokcancel("Quit", "The title already exists!")
+    
+          
 def clear_field():
     ent_title.delete(0,END)
     ent_genre.delete(0,END)
@@ -211,11 +222,14 @@ def clear_field():
 def clear_treev():
     for item in tree.get_children():
         tree.delete(item)
+
 def view():    
     clear_field()      
     clear_treev()
     for row in Table_.view():   
         tree.insert('',END,values = row)
+    chart()
+
 def search():     
     clear_treev()
     for row in Table_.search(title_text.get(), genre_text.get(), author_text.get()): 
@@ -223,20 +237,24 @@ def search():
 
 def insert_field():
     tree.insert('',END,values=(title_text.get(), genre_text.get(), author_text.get()))
+
 def check_blanked_field():
     if  not ent_title.get() or  not ent_genre.get() or not ent_author.get():
-        return messagebox.askokcancel("Quit", "There are several blanked fields?")
+        return messagebox.askokcancel("Quit", "There are several blanked fields ?")
 
 def add():      
     global a  
     global now_
-    if check_blanked_field():True
+    if check_blanked_field(): True
+    elif check_data_exist():True
     else:        
         Table_.insert(title_text.get(), genre_text.get(), author_text.get()) 
         now_=datetime.now()
         a = f"{now_}.ADD:{title_text.get()},{genre_text.get()},{author_text.get()}"
         logfile(a)
         view()
+        chart()
+
 def delete(): 
         global b
         if tree.focus()!='':
@@ -246,12 +264,14 @@ def delete():
                 tree.delete(tree.selection()[0])
                 logfile(f"DELETE:{b}")
                 view()
+                chart()
             else: clear_field() 
-        else: messagebox.showwarning("showwarning", "Lookout, Have selected yet! ")
+        else: messagebox.showwarning("Warning", "Lookout, Have selected yet! ")
     
 
 def update():
     if check_blanked_field() and tree.focus()!='': True
+    elif check_data_exist(): True
     else:
         Table_.update(selected_item[0], title_text.get(), genre_text.get(), author_text.get()) 
         now_=datetime.now()
@@ -259,11 +279,44 @@ def update():
         # clear_field()
         logfile(c)
         view()
+        chart()
 
-def Histogram():
-    fig = Figure(figsize=(5.5),dpi=100)
-    canvas = FigureCanvasTkAgg(fig,window)
-    canvas.draw()
+def chart():
+    frame_chart=Frame(window)
+    frame_chart.grid(row=9,column=0, columnspan= 3)
+    Label(frame_chart, text="All of the Users").grid(row=0, column=0)
+    Label(frame_chart, text="The User").grid(row=0, column=1)
+    Label(frame_chart, text="Top Author of user").grid(row=0, column=2)
+    # pie_chart_person():
+    lst_y =[]
+    lst_label =[]
+    for row in Table_.genre_():
+        lst_label.append(row[0])
+        lst_y.append(row[1])
+    fig1 = Figure(figsize=(2,2))
+    ax = fig1.add_subplot()
+    ax.pie(lst_y, radius=1, labels=lst_label,autopct='%0.2f%%', shadow=True,)
+    chart1 = FigureCanvasTkAgg(fig1,frame_chart)
+    chart1.get_tk_widget().grid(column=1,row=1)
+
+    # pie_chart_allusers():
+    label = []
+    axis_y = []
+    for x,y in Table_.report().items():
+        label.append(x)
+        axis_y.append(y)
+    fig2 = Figure(figsize=(2,2))
+    ax = fig2.add_subplot()
+    ax.pie(axis_y, radius=1, labels=label,autopct='%0.2f%%', shadow=True,)
+    chart2 = FigureCanvasTkAgg(fig2,frame_chart)
+    chart2.get_tk_widget().grid(column=0,row=1)
+ 
+ # Top_List_author_person():
+    lst_Top = Listbox(frame_chart)
+    lst_Top.grid(column=2,row=1)
+    # lst_Top.delete(0,END)
+    for row in Table_.Top_Author():
+        lst_Top.insert(END,row)
 
 def ask_closing():
     if messagebox.askokcancel("Quit", "Do you want to quit?"): 
@@ -271,55 +324,26 @@ def ask_closing():
                 Table_.close()        
 window.protocol("WM_DELETE_WINDOW", ask_closing)
 
+frame1=Frame(window)
+frame1.grid(row=0,column=1,columnspan=3)
 
-lbl_title = Label(window, text="Title",width=20).grid(row=0, column=1,sticky='nsew')
+lbl_title = Label(frame1, text="Title",width=20).grid(row=0, column=0,sticky='nsew')
 
-lbl_genre = Label(window, text="genre", width=20).grid(row=1, column=1,sticky='nsew')
+lbl_genre = Label(frame1, text="genre", width=20).grid(row=1, column=0,sticky='nsew')
 
-lbl_author = Label(window, text="author", width=20).grid(row=2, column=1,sticky='nsew')
+lbl_author = Label(frame1, text="author", width=20).grid(row=2, column=0,sticky='nsew')
 
 title_text = StringVar()
-ent_title = Entry(window, textvariable=title_text,width=20)
-ent_title.grid(row=0, column=2,sticky='nsew')
+ent_title = Entry(frame1, textvariable=title_text,width=20)
+ent_title.grid(row=0, column=1,sticky='nsew')
 
 genre_text = StringVar() 
-ent_genre = Entry(window, textvariable=genre_text,width=20)
-ent_genre.grid(row=1, column=2,sticky='nsew')
+ent_genre = Entry(frame1, textvariable=genre_text,width=20)
+ent_genre.grid(row=1, column=1,sticky='nsew')
 
 author_text = StringVar() 
-ent_author = Entry(window, textvariable=author_text,width=20)
-ent_author.grid(row=2, column=2,sticky='nsew')
-
-lst_Top = Listbox(window)
-lst_Top.grid(rowspan=6,column=4,columnspan=2)
-def Top_List():
-    lst_Top.delete(0,END)
-    for row in Table_.Top3_Author():
-        lst_Top.insert(END,row)
-
-def pie_chart():
-    lst_y =[]
-    lst_label =[]
-    for row in Table_.genre_():
-        lst_label.append(row[0])
-        lst_y.append(row[1])
-    print(lst_label)
-    print(lst_y)
-    plt.pie(lst_y,labels = lst_label)
-    plt.legend()
-    plt.show()
-
-def pie_chart_sum():
-    lst_y =[]
-    lst_label =[]
-    for row in Table_.comprision:
-        lst_label.append(row[0])
-        lst_y.append(row[1])
-    print(lst_label)
-    print(lst_y)
-    plt.pie(lst_y,labels = lst_label)
-    plt.legend()
-    plt.show()
+ent_author = Entry(frame1, textvariable=author_text,width=20)
+ent_author.grid(row=2, column=1,sticky='nsew')
 
 #  Tree 
 columns = ('1', '2', '3','4')
@@ -328,7 +352,7 @@ tree.heading('1', text='ID')
 tree.heading('2', text='Title')
 tree.heading('3', text='genre')
 tree.heading('4', text='Author')
-tree.grid(row=3,column=1,rowspan=6,columnspan=2,sticky='nsew')
+tree.grid(row=3,column=1,rowspan=6,sticky='nsew')
 
 tree.bind('<<TreeviewSelect>>', item_selected)
 
@@ -342,15 +366,11 @@ butt_view = Button(window, text="View all", width=12, command=view).grid(row=3, 
 
 butt_search = Button(window, text="Search ", width=12, command=search).grid(row=4, column=0)
 
-butt_Add = Button(window, text="Add Items", width=12, command=add).grid(row=5, column=0)
+butt_Add = Button(window, text="Add Item", width=12, command=add).grid(row=5, column=0)
 
-butt_Update = Button(window, text="Update selected", width=12, command=update).grid(row=6, column=0)
+butt_Update = Button(window, text="Update Item", width=12, command=update).grid(row=6, column=0)
 
-butt_Delete = Button(window, text="Delete selected", width=12, command=delete).grid(row=7, column=0)
-
-button_top = Button(window, text = 'Top list',command=Top_List, width=12).grid(row=8,column=0)
-
-button_Histogram = Button(window, text = 'Histogram',command=pie_chart, width=12).grid(row=9,column=0)
+butt_Delete = Button(window, text="Delete Item", width=12, command=delete).grid(row=7, column=0)
 
 # Menu bar placed on the left-side of the window, which consists: login; sign-up;
 menubar =Menu(window)
@@ -361,13 +381,9 @@ acount.add_command(label = 'Sign-up', comman = lambda:Sign_Up(master))
 acount.add_separator()
 acount.add_command(label = 'Exit', comman = ask_closing)
 
-
-
-plt.show()
-
 window.config(menu=menubar)
 
-window.mainloop() #carry the functioning o
+window.mainloop()
 
 
 
