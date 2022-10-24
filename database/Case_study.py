@@ -149,8 +149,18 @@ class DB:
         self.conn.commit()
         self.view()
 #to search for a given entry in the table given either the value of the title or author name
-    def search(self, title="",genre="" ,author=""):  
-        self.cur.execute(f"SELECT * FROM {self.data} WHERE title=? OR genre=? OR author=?", (title, genre,author,))
+    def search_title(self, title):  
+        self.cur.execute(f"SELECT * FROM {self.data} WHERE title like ?", ("%"+title+"%",))
+        rows = self.cur.fetchall()
+        return rows
+    
+    def search_genre(self, genre):  
+        self.cur.execute(f"SELECT * FROM {self.data} WHERE genre like ? ", ("%"+genre+"%",))
+        rows = self.cur.fetchall()
+        return rows
+    
+    def search_author(self,author):  
+        self.cur.execute(f"SELECT * FROM {self.data} WHERE author like ? ", ("%"+author+"%",))
         rows = self.cur.fetchall()
         return rows
 
@@ -230,9 +240,19 @@ def view():
         tree.insert('',END,values = row)
     chart()
 
-def search():     
+def search_title():     
     clear_treev()
-    for row in Table_.search(title_text.get(), genre_text.get(), author_text.get()): 
+    for row in Table_.search_title(title_text.get()): 
+        tree.insert('',END, values = row) 
+
+def search_genre():     
+    clear_treev()
+    for row in Table_.search_genre(genre_text.get()): 
+        tree.insert('',END, values = row) 
+
+def search_author():   
+    clear_treev()
+    for row in Table_.search_author(author_text.get()): 
         tree.insert('',END, values = row) 
 
 def insert_field():
@@ -345,6 +365,10 @@ author_text = StringVar()
 ent_author = Entry(frame1, textvariable=author_text,width=20)
 ent_author.grid(row=2, column=1,sticky='nsew')
 
+butt_search = Button(frame1, text="Search ", width=12, command=search_title).grid(row=0, column=2)
+butt_search = Button(frame1, text="Search ", width=12, command=search_genre).grid(row=1, column=2)
+butt_search = Button(frame1, text="Search ", width=12, command=search_author).grid(row=2, column=2)
+
 #  Tree 
 columns = ('1', '2', '3','4')
 tree = ttk.Treeview(columns=columns, show='headings')
@@ -364,13 +388,11 @@ scrollbar.grid(row=3,column=3,rowspan=6,sticky='ne')
 
 butt_view = Button(window, text="View all", width=12, command=view).grid(row=3, column=0)
 
-butt_search = Button(window, text="Search ", width=12, command=search).grid(row=4, column=0)
+butt_Add = Button(window, text="Add Item", width=12, command=add).grid(row=4, column=0)
 
-butt_Add = Button(window, text="Add Item", width=12, command=add).grid(row=5, column=0)
+butt_Update = Button(window, text="Update Item", width=12, command=update).grid(row=5, column=0)
 
-butt_Update = Button(window, text="Update Item", width=12, command=update).grid(row=6, column=0)
-
-butt_Delete = Button(window, text="Delete Item", width=12, command=delete).grid(row=7, column=0)
+butt_Delete = Button(window, text="Delete Item", width=12, command=delete).grid(row=6, column=0)
 
 # Menu bar placed on the left-side of the window, which consists: login; sign-up;
 menubar =Menu(window)
