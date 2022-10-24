@@ -137,17 +137,17 @@ class DB:
     def insert(self, title, genre,author):   
         self.cur.execute(f"INSERT INTO {self.data} VALUES (NULL,?,?,?)", (title, genre,author,)) 
         self.conn.commit()
-        self.view()
+        # self.view()
 #to update the values of the selected row with the values passed by the user
     def update(self, id, title, genre,author):    
         self.cur.execute(f"UPDATE {self.data} SET title=?, genre=?, author=? WHERE id=?", (title,genre,author,id,))
         self.conn.commit()
-        self.view()
+        # self.view()
 #to delete the row from the table given of the id of the selected row.
     def delete(self, id):                   
         self.cur.execute(f"DELETE FROM {self.data} WHERE id=?", (id,))
         self.conn.commit()
-        self.view()
+        # self.view()
 #to search for a given entry in the table given either the value of the title or author name
     def search_title(self, title):  
         self.cur.execute(f"SELECT * FROM {self.data} WHERE title like ?", ("%"+title+"%",))
@@ -217,7 +217,7 @@ def item_selected(event):
 def check_data_exist():
     count_=0
     for row in Table_.view():
-        if row[1]==title_text.get(): 
+        if row[1]==title_text.get().upper(): 
             count_+=1
             # print(row[1])
     if count_>=1 :
@@ -268,7 +268,7 @@ def add():
     if check_blanked_field(): True
     elif check_data_exist():True
     else:        
-        Table_.insert(title_text.get(), genre_text.get(), author_text.get()) 
+        Table_.insert(title_text.get().upper(), genre_text.get(), author_text.get()) 
         now_=datetime.now()
         a = f"{now_}.ADD:{title_text.get()},{genre_text.get()},{author_text.get()}"
         logfile(a)
@@ -293,7 +293,7 @@ def update():
     if check_blanked_field() and tree.focus()!='': True
     elif check_data_exist(): True
     else:
-        Table_.update(selected_item[0], title_text.get(), genre_text.get(), author_text.get()) 
+        Table_.update(selected_item[0], title_text.get().upper(), genre_text.get(), author_text.get()) 
         now_=datetime.now()
         c = f"{now_}.UPDate:{title_text.get()},{genre_text.get()},{author_text.get()}"
         # clear_field()
@@ -404,7 +404,7 @@ acount.add_separator()
 acount.add_command(label = 'Exit', comman = ask_closing)
 
 window.config(menu=menubar)
-
+ 
 window.mainloop()
 
 
