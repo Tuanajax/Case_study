@@ -43,7 +43,7 @@ class Sign_Up(Toplevel):
     
     def reset(self):
         self.add_us.set('')
-        Label(self,text="Wrong Password'format or Blanked Field of name").grid(row =4,column =1) 
+        Label(self,text="Wrong").grid(row =4,column =1) 
 
     def valid_pw(self,PW):  
     # Check exist_Uppercase:
@@ -78,6 +78,9 @@ class Sign_Up(Toplevel):
             Data_[add_ID] = name_,pw_
             print(Data_)
             messagebox.showinfo('Infor',f'Success!\n-ID:{add_ID}\n-User name: {name_}')
+            
+            login_=Login(window)
+            
             self.destroy()
                    
 class Login(Toplevel):
@@ -87,13 +90,13 @@ class Login(Toplevel):
         self.title('Login')
         lbl_id = Label(self,text="ID").grid(row=0,column=0)
         self.ID=StringVar()
-        ent_username = Entry(self,textvariable=self.ID).grid(row=0,column=1)
+        Entry(self,textvariable=self.ID).grid(row=0,column=1)
         
-        lbl_pw = Label(self,text="Enter the password").grid(row =1,column =0)
+        Label(self,text="Enter the password").grid(row =1,column =0)
         self.pw =StringVar()
-        ent_pw = Entry(self,textvariable=self.pw,show="*").grid(row=1,column=1)
+        Entry(self,textvariable=self.pw,show="*").grid(row=1,column=1)
         
-        Butt_login=Button(self,text='Login',command=self.validateLogin).grid(row=4, column=0)
+        Button(self,text='Login',command=self.validateLogin).grid(row=4, column=0)
     
     def close_log(self):
         self.destroy()
@@ -125,7 +128,7 @@ class DB:
         self.cur.execute(f"CREATE TABLE IF NOT EXISTS {self.data} (id INTEGER PRIMARY KEY, title TEXT, genre TEXT,author TEXT)")
         self.conn.commit() 
 #closes the connection with the database
-    def  close(self):        
+    def __del__(self):        
         self.conn.close()   
         
 #To view all the rows present in the table
@@ -197,6 +200,9 @@ class DB:
 window = Tk()
 window.title("My Books!!!!")
 
+def get_value():
+    return (title_text.get().capitalize().strip(),genre_text.get().capitalize(),author_text.get().capitalize(),)
+
 log_file=list()
 def logfile(record):
     # global log_file
@@ -210,14 +216,13 @@ def item_selected(event):
     selected = tree.focus()
     selected_item = tree.item(selected,'values')
     clear_field()
-    ent_title.insert(END,selected_item[1])
-    ent_genre.insert(END,selected_item[2])
-    ent_author.insert(END,selected_item[3])
+    for i in range(3):
+        entry_text[i].set(selected_item[1+i])
 
 def check_data_exist():
     count_=0
     for row in Table_.view():
-        if row[1]==title_text.get().upper(): 
+        if row[1]==title_text.get().capitalize().strip(): 
             count_+=1
             # print(row[1])
     if count_>=1 :
@@ -225,10 +230,9 @@ def check_data_exist():
     
           
 def clear_field():
-    ent_title.delete(0,END)
-    ent_genre.delete(0,END)
-    ent_author.delete(0,END)
-
+    for i in entry_text:
+        i.set("")   
+    
 def clear_treev():
     for item in tree.get_children():
         tree.delete(item)
@@ -256,10 +260,10 @@ def search_author():
         tree.insert('',END, values = row) 
 
 def insert_field():
-    tree.insert('',END,values=(title_text.get(), genre_text.get(), author_text.get()))
+    tree.insert('',END,values=get_value())
 
 def check_blanked_field():
-    if  not ent_title.get() or  not ent_genre.get() or not ent_author.get():
+    if entry_text[0].get=="" or entry_text[1].get()=="" or entry_text[2].get()=="":
         return messagebox.askokcancel("Quit", "There are several blanked fields ?")
 
 def add():      
@@ -268,9 +272,9 @@ def add():
     if check_blanked_field(): True
     elif check_data_exist():True
     else:        
-        Table_.insert(title_text.get().upper(), genre_text.get(), author_text.get()) 
+        Table_.insert(*get_value()) 
         now_=datetime.now()
-        a = f"{now_}.ADD:{title_text.get()},{genre_text.get()},{author_text.get()}"
+        a = f"{now_}.ADD:{get_value()}"
         logfile(a)
         view()
         chart()
@@ -293,9 +297,9 @@ def update():
     if check_blanked_field() and tree.focus()!='': True
     elif check_data_exist(): True
     else:
-        Table_.update(selected_item[0], title_text.get().upper(), genre_text.get(), author_text.get()) 
+        Table_.update(selected_item[0],*get_value()) 
         now_=datetime.now()
-        c = f"{now_}.UPDate:{title_text.get()},{genre_text.get()},{author_text.get()}"
+        c = f"{now_}.UPdate:{get_value()}"
         # clear_field()
         logfile(c)
         view()
@@ -304,10 +308,8 @@ def update():
 def chart():
     frame_chart=Frame(window)
     frame_chart.grid(row=9,column=0, columnspan= 3)
-    Label(frame_chart, text="All of the Users").grid(row=0, column=0)
-    Label(frame_chart, text="The User").grid(row=0, column=1)
-    Label(frame_chart, text="Top Author of user").grid(row=0, column=2)
-    # pie_chart_person():
+    for i in range(3):  
+        Label(frame_chart, text="All of the Users").grid(row=0, column=i)
     lst_y =[]
     lst_label =[]
     for row in Table_.genre_():
@@ -318,7 +320,6 @@ def chart():
     ax.pie(lst_y, radius=1, labels=lst_label,autopct='%0.2f%%', shadow=True,)
     chart1 = FigureCanvasTkAgg(fig1,frame_chart)
     chart1.get_tk_widget().grid(column=1,row=1)
-
     # pie_chart_allusers():
     label = []
     axis_y = []
@@ -334,77 +335,62 @@ def chart():
  # Top_List_author_person():
     lst_Top = Listbox(frame_chart)
     lst_Top.grid(column=2,row=1)
-    # lst_Top.delete(0,END)
     for row in Table_.Top_Author():
         lst_Top.insert(END,row)
 
 def ask_closing():
     if messagebox.askokcancel("Quit", "Do you want to quit?"): 
                 window.destroy()      
-                Table_.close()        
+                Table_.__del__()  
 window.protocol("WM_DELETE_WINDOW", ask_closing)
 
 frame1=Frame(window)
 frame1.grid(row=0,column=1,columnspan=3)
+title_text, genre_text,author_text =StringVar(),StringVar(),StringVar()
+entry_text = (title_text,genre_text,author_text) 
 
-lbl_title = Label(frame1, text="Title",width=20).grid(row=0, column=0,sticky='nsew')
+butt_txt = ("View/Reset","Add Item","Update Item","Delete Item")
 
-lbl_genre = Label(frame1, text="genre", width=20).grid(row=1, column=0,sticky='nsew')
+lbl_text = ("Title","Genre","Author",)
 
-lbl_author = Label(frame1, text="author", width=20).grid(row=2, column=0,sticky='nsew')
+butt_def =(view,add,update,delete)
 
-title_text = StringVar()
-ent_title = Entry(frame1, textvariable=title_text,width=20)
-ent_title.grid(row=0, column=1,sticky='nsew')
+lst_def =(search_title,search_genre,search_author)
 
-genre_text = StringVar() 
-ent_genre = Entry(frame1, textvariable=genre_text,width=20)
-ent_genre.grid(row=1, column=1,sticky='nsew')
+for i in range(3):
+    Label(frame1, text=lbl_text[i],width=20).grid(row=i, column=0)
 
-author_text = StringVar() 
-ent_author = Entry(frame1, textvariable=author_text,width=20)
-ent_author.grid(row=2, column=1,sticky='nsew')
+    Button_search=Button(frame1, text="Search ", width=12, command=lst_def[i]).grid(row=i, column=2)
 
-butt_search = Button(frame1, text="Search ", width=12, command=search_title).grid(row=0, column=2)
-butt_search = Button(frame1, text="Search ", width=12, command=search_genre).grid(row=1, column=2)
-butt_search = Button(frame1, text="Search ", width=12, command=search_author).grid(row=2, column=2)
+    Entry(frame1, textvariable=entry_text[i],width=20).grid(row=i, column=1)
 
+    Button(window, text=butt_txt[i], width=12, command=butt_def[i]).grid(row=i+3, column=0)
+else:Button(window, text=butt_txt[3], width=12, command=butt_def[3]).grid(row=6, column=0)   
 #  Tree 
 columns = ('1', '2', '3','4')
+columns_text=('ID',"Title","Genre","Author")
 tree = ttk.Treeview(columns=columns, show='headings')
-tree.heading('1', text='ID')
-tree.heading('2', text='Title')
-tree.heading('3', text='genre')
-tree.heading('4', text='Author')
+for i in range(4):
+    tree.heading(f'{i+1}', text=columns_text[i])
 tree.grid(row=3,column=1,rowspan=6,sticky='nsew')
-
 tree.bind('<<TreeviewSelect>>', item_selected)
 
 scrollbar = ttk.Scrollbar(window,orient=VERTICAL,command=tree.yview)
 tree.config(yscrollcommand=scrollbar.set)
 scrollbar.grid(row=3,column=3,rowspan=6,sticky='ne')
 
-
-
-butt_view = Button(window, text="View all", width=12, command=view).grid(row=3, column=0)
-
-butt_Add = Button(window, text="Add Item", width=12, command=add).grid(row=4, column=0)
-
-butt_Update = Button(window, text="Update Item", width=12, command=update).grid(row=5, column=0)
-
-butt_Delete = Button(window, text="Delete Item", width=12, command=delete).grid(row=6, column=0)
-
 # Menu bar placed on the left-side of the window, which consists: login; sign-up;
 menubar =Menu(window)
 acount = Menu(menubar,tearoff=0)
-menubar.add_cascade(label=f"My account", menu=acount)
+menubar.add_cascade(label="My account", menu=acount)
 acount.add_command(label = 'login/switch', comman = lambda:Login(master))
 acount.add_command(label = 'Sign-up', comman = lambda:Sign_Up(master))
 acount.add_separator()
 acount.add_command(label = 'Exit', comman = ask_closing)
 
 window.config(menu=menubar)
- 
+
+
 window.mainloop()
 
 
